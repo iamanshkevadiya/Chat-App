@@ -88,14 +88,6 @@ export async function login(req, res) {
 }
 
 export async function logout(req, res) {
-    try {
-        res.clearCookie("jwt", {
-            httpOnly: true,
-            sameSite: 'strict',
-            secure: process.env.NODE_ENV === 'production'
-        });
-        res.status(200).json({ message: "Logged out successfully" });   
-    } catch (error) {
-        console.log("Error in logout controller", error.message);   
-    }
+    res.clearCookie("jwt");
+    res.status(200).json({ message: "Logged out successfully" });
 }
