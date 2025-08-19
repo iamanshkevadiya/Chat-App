@@ -1,9 +1,11 @@
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
+
 export async function signup(req, res) {
-    const {email,password,fullname} = req.body;
+    const {email,password,fullName} = req.body;
     try {
-        if(!email || !password || !fullname) {
+        if(!email || !password || !fullName) {
             return res.status(400).json({message: "All fields are required"});
         }
 
@@ -23,12 +25,16 @@ export async function signup(req, res) {
         const idx = Math.floor(Math.random() * 100 )+ 1;
         const rendomAvter = `https://avatar.iran.liara.run/public/${idx}.png`;
 
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         const newUser = new User({
+            fullName,
             email,
-            fullname,
-            password,
+            password: hashedPassword,
             profilePic: rendomAvter
         });
+
+        await newUser.save();
         const token = jwt.sign({
             userid: newUser._id,
         },process.env.JWT_SECRET_KEY,{
@@ -60,7 +66,7 @@ export async function login(req, res) {
     const user = await User.findOne({ email });
     if (!user) return res.status(401).json({ message: "Invalid email or password" });
 
-    const isPasswordCorrect = await user.matchPassword(password);
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) return res.status(401).json({ message: "Invalid email or password" });
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
@@ -82,5 +88,14 @@ export async function login(req, res) {
 }
 
 export async function logout(req, res) {
-    res.send('Logout Route');
+    try {
+        res.clearCookie("jwt", {
+            httpOnly: true,
+            sameSite: 'strict',
+            secure: process.env.NODE_ENV === 'production'
+        });
+        res.status(200).json({ message: "Logged out successfully" });   
+    } catch (error) {
+        console.log("Error in logout controller", error.message);   
+    }
 }
