@@ -9,5 +9,3 @@ if (!apiKey || !apiSecret) {
 }
 
 const streamClient = StreamChat.getInstance(apiKey, apiSecret);
-
-
